@@ -62,10 +62,10 @@ function Index() {
       const data = col
         ? await fetchCollectionProducts(col, 24)
         : await fetchProducts(24);
-      const edges = data?.products?.edges ?? [];
+      const edges = data?.edges ?? [];
       setProducts(edges);
-      setHasNext(Boolean(data?.products?.pageInfo?.hasNextPage));
-      setCursor(data?.products?.pageInfo?.endCursor ?? null);
+      setHasNext(Boolean(data?.pageInfo?.hasNextPage));
+      setCursor(data?.pageInfo?.endCursor ?? null);
     } catch (e) {
       console.error(e);
     } finally {
@@ -84,10 +84,10 @@ function Index() {
       const data = collection
         ? await fetchCollectionProducts(collection, 24, cursor ?? undefined)
         : await fetchProducts(24, undefined);
-      const edges = data?.products?.edges ?? [];
+      const edges = data?.edges ?? [];
       setProducts((prev) => [...prev, ...edges]);
-      setHasNext(Boolean(data?.products?.pageInfo?.hasNextPage));
-      setCursor(data?.products?.pageInfo?.endCursor ?? null);
+      setHasNext(Boolean(data?.pageInfo?.hasNextPage));
+      setCursor(data?.pageInfo?.endCursor ?? null);
     } catch (e) {
       console.error(e);
     } finally {
