@@ -1,9 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Sparkles, TrendingUp, ShoppingBag } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+  TrendingUp,
+  ShoppingBag,
+  Zap,
+  Truck,
+  ShieldCheck,
+  RotateCcw,
+  BadgePercent,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/storefront/ProductCard";
+import { SearchBar } from "@/components/storefront/SearchBar";
+import { Countdown } from "@/components/storefront/Countdown";
+import { dealCountdownTarget } from "@/lib/social-proof";
 import {
   fetchProducts,
   fetchCollectionProducts,
@@ -15,7 +29,7 @@ import {
 
 export const Route = createFileRoute("/")({
   validateSearch: (search) =>
-    z.object({ collection: z.string().optional() }).parse(search),
+    z.object({ collection: z.string().optional(), q: z.string().optional() }).parse(search),
   head: () => ({
     meta: [
       { title: `${STORE_NAME} — Trending Deals & Best Sellers` },
@@ -37,13 +51,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { collection } = Route.useSearch();
+  const { collection, q } = Route.useSearch();
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
   const [cols, setCols] = useState<ShopifyCollection[]>([]);
+  const [dealTarget] = useState(() => dealCountdownTarget());
 
   useEffect(() => {
     fetchCollections()
@@ -53,17 +68,24 @@ function Index() {
       .catch(() => {});
   }, []);
 
-  const load = useCallback(async (col: string | undefined) => {
+  const load = useCallback(async (col: string | undefined, term: string | undefined) => {
     setLoading(true);
     setProducts([]);
     setCursor(null);
     setHasNext(false);
     try {
-      const data = col
-        ? await fetchCollectionProducts(col, 24)
-        : await fetchProducts(24);
+      const data = term
+        ? await fetchProducts(48, `title:*${term}* OR product_type:*${term}* OR tag:*${term}*`)
+        : col
+          ? await fetchCollectionProducts(col, 24)
+          : await fetchProducts(24);
       const edges = data?.edges ?? [];
-      setProducts(edges);
+      const filtered = term
+        ? edges.filter((e: ShopifyProduct) =>
+            e.node.title.toLowerCase().includes(term.toLowerCase()),
+          )
+        : edges;
+      setProducts(filtered.length > 0 ? filtered : edges);
       setHasNext(Boolean(data?.pageInfo?.hasNextPage));
       setCursor(data?.pageInfo?.endCursor ?? null);
     } catch (e) {
@@ -74,11 +96,11 @@ function Index() {
   }, []);
 
   useEffect(() => {
-    load(collection);
-  }, [collection, load]);
+    load(collection, q);
+  }, [collection, q, load]);
 
   const loadMore = async () => {
-    if (!hasNext || loadingMore) return;
+    if (!hasNext || loadingMore || q) return;
     setLoadingMore(true);
     try {
       const data = collection
@@ -95,9 +117,11 @@ function Index() {
     }
   };
 
-  const activeTitle = collection
-    ? cols.find((c) => c.node.handle === collection)?.node.title ?? "Collection"
-    : "All Products";
+  const activeTitle = q
+    ? `Results for “${q}”`
+    : collection
+      ? cols.find((c) => c.node.handle === collection)?.node.title ?? "Collection"
+      : "All Products";
 
   return (
     <div>
@@ -116,6 +140,9 @@ function Index() {
               Hand-picked products across fashion, home, toys and tech — at prices
               you'll love. Shop the full catalog and check out securely with Shopify.
             </p>
+            <div className="mt-6 max-w-lg">
+              <SearchBar initialValue={q ?? ""} />
+            </div>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button size="lg" asChild>
                 <a href="#shop">Shop now</a>
@@ -124,9 +151,38 @@ function Index() {
                 <a href="#collections">Browse collections</a>
               </Button>
             </div>
+            <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-ink/80">
+              <li className="flex items-center gap-1.5">
+                <Truck className="h-4 w-4 text-primary" /> Free shipping over $29
+              </li>
+              <li className="flex items-center gap-1.5">
+                <RotateCcw className="h-4 w-4 text-primary" /> Free 30-day returns
+              </li>
+              <li className="flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Buyer protection
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-primary" /> 120K+ happy shoppers
+              </li>
+            </ul>
           </div>
         </div>
       </section>
+
+      {/* Lightning deals urgency strip */}
+      <div className="border-b border-border bg-deal text-deal-foreground">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 py-3 text-sm font-bold sm:px-6">
+          <span className="flex items-center gap-1.5">
+            <Zap className="h-4 w-4" /> Lightning deals
+          </span>
+          <span className="flex items-center gap-1.5 font-semibold">
+            <BadgePercent className="h-4 w-4" /> Up to 70% off — limited stock
+          </span>
+          <span className="flex items-center gap-2">
+            Ends in <Countdown target={dealTarget} className="flex items-center text-xs" />
+          </span>
+        </div>
+      </div>
 
       {/* Collection pills */}
       <div id="collections" className="border-b border-border bg-background">
