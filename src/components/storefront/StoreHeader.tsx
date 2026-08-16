@@ -3,6 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { Menu, X, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CartDrawer } from "./CartDrawer";
+import { SearchBar } from "./SearchBar";
+import { AnnouncementBar } from "./AnnouncementBar";
 import { fetchCollections, STORE_NAME, type ShopifyCollection } from "@/lib/shopify";
 
 const FALLBACK_COLLECTIONS: ShopifyCollection[] = [
@@ -30,6 +32,7 @@ export function StoreHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <AnnouncementBar />
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2" aria-label={STORE_NAME}>
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-background">
@@ -40,24 +43,7 @@ export function StoreHeader() {
           </span>
         </Link>
 
-        <nav className="hidden flex-1 items-center gap-1 lg:flex" aria-label="Collections">
-          <Link
-            to="/"
-            className="rounded-full px-3 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-          >
-            All
-          </Link>
-          {collections.slice(0, 8).map((c) => (
-            <Link
-              key={c.node.handle}
-              to="/"
-              search={{ collection: c.node.handle }}
-              className="rounded-full px-3 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
-            >
-              {c.node.title}
-            </Link>
-          ))}
-        </nav>
+        <SearchBar className="hidden flex-1 md:block" />
 
         <div className="ml-auto flex items-center gap-2">
           <Button
@@ -72,6 +58,32 @@ export function StoreHeader() {
           <CartDrawer />
         </div>
       </div>
+
+      <div className="border-t border-border/60 px-4 py-2 md:hidden">
+        <SearchBar />
+      </div>
+
+      <nav
+        className="hidden items-center gap-1 overflow-x-auto border-t border-border/60 px-4 py-1.5 lg:flex"
+        aria-label="Collections"
+      >
+        <Link
+          to="/"
+          className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
+        >
+          All
+        </Link>
+        {collections.slice(0, 9).map((c) => (
+          <Link
+            key={c.node.handle}
+            to="/"
+            search={{ collection: c.node.handle }}
+            className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent hover:text-foreground"
+          >
+            {c.node.title}
+          </Link>
+        ))}
+      </nav>
 
       {mobileOpen && (
         <nav className="border-t border-border bg-background lg:hidden" aria-label="Collections mobile">
