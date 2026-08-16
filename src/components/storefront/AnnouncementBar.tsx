@@ -18,7 +18,7 @@ export function AnnouncementBar() {
     return () => clearInterval(id);
   }, []);
 
-  const Msg = MESSAGES[i];
+  const Msg = MESSAGES[i] ?? MESSAGES[0]!;
   const Icon = Msg.icon;
 
   return (
