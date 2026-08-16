@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { ShoppingBag, Loader2 } from "lucide-react";
+import { ShoppingBag, Loader2, Star, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cartStore";
 import { formatPrice, discountPercent } from "@/lib/format";
+import { socialProof } from "@/lib/social-proof";
 import type { ShopifyProduct } from "@/lib/shopify";
 import { toast } from "sonner";
 
@@ -16,6 +17,7 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
   const compareAt = p.compareAtPriceRange?.minVariantPrice?.amount;
   const off = discountPercent(minPrice.amount, compareAt);
   const variant = p.variants.edges.find((e) => e.node.availableForSale)?.node ?? p.variants.edges[0]?.node;
+  const proof = socialProof(p.id);
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -63,12 +65,46 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
             Sold out
           </span>
         ) : null}
+        {variant?.availableForSale && proof.almostGone ? (
+          <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-ink/85 px-2.5 py-1 text-[11px] font-bold text-background">
+            <Eye className="h-3 w-3 text-primary" />
+            {proof.viewing} people viewing
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         <h3 className="line-clamp-2 font-display text-sm font-semibold leading-snug text-foreground">
           {p.title}
         </h3>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-0.5 font-semibold text-foreground">
+            <Star className="h-3 w-3 fill-primary text-primary" />
+            {proof.rating.toFixed(1)}
+          </span>
+          <span>({proof.reviews})</span>
+          <span aria-hidden>·</span>
+          <span className="font-semibold text-foreground">{proof.soldLabel}</span>
+        </div>
+        {variant?.availableForSale ? (
+          <div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className={proof.almostGone ? "h-full bg-deal" : "h-full bg-primary"}
+                style={{ width: `${Math.min(92, 100 - proof.stockLeft * 2)}%` }}
+              />
+            </div>
+            <p
+              className={`mt-1 text-[11px] font-semibold ${
+                proof.almostGone ? "text-deal" : "text-muted-foreground"
+              }`}
+            >
+              {proof.almostGone
+                ? `Almost gone — only ${proof.stockLeft} left`
+                : `${proof.stockLeft} left in stock`}
+            </p>
+          </div>
+        ) : null}
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
           <div className="flex flex-col">
             <span className="text-base font-bold text-foreground">
